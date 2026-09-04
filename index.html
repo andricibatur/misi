@@ -1,0 +1,3592 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<title>Mission Manager</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    margin: 0;
+    background: #f1f5f9;
+    font-family: Arial, sans-serif;
+    color: #1e293b;
+}
+
+button,
+input,
+select,
+textarea {
+    font-family: inherit;
+}
+
+button {
+    touch-action: manipulation;
+}
+
+.card {
+    background: white;
+    border-radius: 18px;
+    box-shadow: 0 4px 18px rgba(0,0,0,.06);
+}
+
+.timer {
+    font-family: monospace;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.timer.warning {
+    color: #dc2626;
+}
+
+.progress {
+    height: 7px;
+    background: #e5e7eb;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    border-radius: 20px;
+    transition: width .5s linear;
+}
+
+.modal-bg {
+    background: rgba(0,0,0,.5);
+    backdrop-filter: blur(3px);
+}
+
+.tab-active {
+    background: #2563eb;
+    color: white;
+}
+
+.mission-card {
+    transition: .2s;
+}
+
+.mission-card:active {
+    transform: scale(.99);
+}
+
+.stat-number {
+    font-size: 26px;
+    font-weight: 800;
+}
+
+.mobile-btn {
+    min-height: 46px;
+}
+
+.bottom-nav {
+    position: sticky;
+    bottom: 0;
+    z-index: 30;
+}
+
+.message {
+    max-width: 82%;
+    word-break: break-word;
+}
+
+.message-me {
+    margin-left: auto;
+    background: #2563eb;
+    color: white;
+    border-radius: 16px 16px 4px 16px;
+}
+
+.message-other {
+    margin-right: auto;
+    background: #e2e8f0;
+    color: #1e293b;
+    border-radius: 16px 16px 16px 4px;
+}
+
+.safe-area {
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+@media (min-width: 768px) {
+    .bottom-nav {
+        position: static;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<!-- =====================================================
+     LOGIN
+===================================================== -->
+
+<div id="authScreen" class="min-h-screen flex items-center justify-center p-4">
+
+    <div class="card w-full max-w-md p-6">
+
+        <div class="text-center mb-6">
+
+            <div class="text-5xl mb-3">🎯</div>
+
+            <h1 class="text-2xl font-bold">
+                Mission Manager
+            </h1>
+
+            <p class="text-gray-500 mt-1">
+                Kelola tugas dan misi tim
+            </p>
+
+        </div>
+
+        <div class="flex bg-gray-100 p-1 rounded-xl mb-5">
+
+            <button
+                id="loginModeBtn"
+                onclick="setAuthMode('login')"
+                class="flex-1 py-3 rounded-lg font-bold bg-white shadow">
+                Login
+            </button>
+
+            <button
+                id="registerModeBtn"
+                onclick="setAuthMode('register')"
+                class="flex-1 py-3 rounded-lg font-bold text-gray-500">
+                Buat Akun
+            </button>
+
+        </div>
+
+        <div class="space-y-4">
+
+            <div id="nameBox">
+
+                <label class="block text-sm font-bold mb-1">
+                    Nama
+                </label>
+
+                <input
+                    id="authName"
+                    type="text"
+                    placeholder="Nama pengguna"
+                    autocomplete="name"
+                    class="w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-400">
+
+            </div>
+
+            <div>
+
+                <label class="block text-sm font-bold mb-1">
+                    Email
+                </label>
+
+                <input
+                    id="authEmail"
+                    type="email"
+                    placeholder="nama@email.com"
+                    autocomplete="email"
+                    class="w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-400">
+
+            </div>
+
+            <div>
+
+                <label class="block text-sm font-bold mb-1">
+                    Password
+                </label>
+
+                <input
+                    id="authPassword"
+                    type="password"
+                    placeholder="Minimal 6 karakter"
+                    autocomplete="current-password"
+                    class="w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-400">
+
+            </div>
+
+            <button
+                id="authButton"
+                onclick="submitAuth()"
+                class="mobile-btn w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold">
+
+                🔐 Login
+
+            </button>
+
+            <div
+                id="authMessage"
+                class="text-sm text-center text-gray-500 min-h-[20px]">
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     APPLICATION
+===================================================== -->
+
+<div id="appScreen" class="hidden">
+
+    <div class="max-w-6xl mx-auto p-3 md:p-5">
+
+        <!-- HEADER -->
+
+        <div class="card p-4 md:p-5 mb-4">
+
+            <div class="flex items-center justify-between gap-3">
+
+                <div class="min-w-0">
+
+                    <h1 class="text-xl md:text-3xl font-bold truncate">
+                        🎯 Mission Manager
+                    </h1>
+
+                    <p
+                        id="currentUserInfo"
+                        class="text-gray-500 text-sm mt-1 truncate">
+                    </p>
+
+                </div>
+
+                <button
+                    onclick="logoutUser()"
+                    class="shrink-0 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2.5 rounded-xl font-bold text-sm">
+
+                    Keluar
+
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <!-- STATISTICS -->
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 mb-4">
+
+            <div class="card p-3 md:p-4">
+
+                <div class="text-gray-500 text-xs md:text-sm">
+                    Total Misi
+                </div>
+
+                <div id="statTotal" class="stat-number">
+                    0
+                </div>
+
+            </div>
+
+            <div class="card p-3 md:p-4">
+
+                <div class="text-gray-500 text-xs md:text-sm">
+                    Aktif
+                </div>
+
+                <div id="statActive"
+                     class="stat-number text-blue-600">
+                    0
+                </div>
+
+            </div>
+
+            <div class="card p-3 md:p-4">
+
+                <div class="text-gray-500 text-xs md:text-sm">
+                    Selesai
+                </div>
+
+                <div id="statDone"
+                     class="stat-number text-green-600">
+                    0
+                </div>
+
+            </div>
+
+            <div class="card p-3 md:p-4">
+
+                <div class="text-gray-500 text-xs md:text-sm">
+                    Terlambat
+                </div>
+
+                <div id="statLate"
+                     class="stat-number text-red-600">
+                    0
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- NAVIGATION -->
+
+        <div class="card p-1.5 mb-4 bottom-nav safe-area">
+
+            <div class="grid grid-cols-3 gap-1">
+
+                <button
+                    id="tabMission"
+                    onclick="showTab('mission')"
+                    class="tab-active py-3 rounded-xl font-bold text-sm">
+                    🎯 Misi
+                </button>
+
+                <button
+                    id="tabChat"
+                    onclick="showTab('chat')"
+                    class="py-3 rounded-xl font-bold text-sm">
+                    💬 Chat
+                </button>
+
+                <button
+                    id="tabReport"
+                    onclick="showTab('report')"
+                    class="py-3 rounded-xl font-bold text-sm">
+                    📊 Laporan
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <!-- =================================================
+             MISSION TAB
+        ================================================== -->
+
+        <div id="missionTab">
+
+            <div class="card p-3 md:p-4 mb-4">
+
+                <div class="grid gap-2 md:grid-cols-3">
+
+                    <input
+                        id="searchMission"
+                        oninput="renderMissions()"
+                        type="text"
+                        placeholder="🔎 Cari misi / nama..."
+                        class="w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-400">
+
+                    <select
+                        id="filterCategory"
+                        onchange="renderMissions()"
+                        class="w-full border rounded-xl px-4 py-3">
+
+                        <option value="">
+                            Semua Kategori
+                        </option>
+
+                        <option>Penjualan</option>
+                        <option>Pengiriman</option>
+                        <option>Produksi</option>
+                        <option>Keuangan</option>
+                        <option>Pembelian</option>
+                        <option>Pemasaran</option>
+                        <option>Operasional</option>
+                        <option>Lainnya</option>
+
+                    </select>
+
+                    <select
+                        id="filterStatus"
+                        onchange="renderMissions()"
+                        class="w-full border rounded-xl px-4 py-3">
+
+                        <option value="">
+                            Semua Status
+                        </option>
+
+                        <option value="active">
+                            Aktif
+                        </option>
+
+                        <option value="done">
+                            Selesai
+                        </option>
+
+                        <option value="late">
+                            Terlambat
+                        </option>
+
+                    </select>
+
+                </div>
+
+            </div>
+
+
+            <div id="missionList" class="space-y-3">
+
+                <div class="card p-8 text-center text-gray-500">
+                    Memuat misi...
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =================================================
+             CHAT TAB
+        ================================================== -->
+
+        <div id="chatTab" class="hidden">
+
+            <div class="card p-4 mb-4">
+
+                <h2 class="text-lg font-bold mb-1">
+                    💬 Komunikasi Antar User
+                </h2>
+
+                <p class="text-sm text-gray-500 mb-4">
+                    Masukkan email user yang ingin diajak chat.
+                </p>
+
+                <div class="flex gap-2">
+
+                    <input
+                        id="chatEmail"
+                        type="email"
+                        placeholder="email user..."
+                        class="min-w-0 flex-1 border rounded-xl px-4 py-3">
+
+                    <button
+                        onclick="openChatByEmail()"
+                        class="shrink-0 bg-blue-600 text-white px-4 rounded-xl font-bold">
+
+                        Buka
+
+                    </button>
+
+                </div>
+
+                <div
+                    id="chatTargetInfo"
+                    class="mt-3 text-sm text-blue-600 font-bold">
+                </div>
+
+            </div>
+
+
+            <div class="card overflow-hidden">
+
+                <div
+                    id="chatMessages"
+                    class="h-[55vh] md:h-[500px] overflow-y-auto p-4 space-y-2">
+
+                    <div class="text-center text-gray-400 py-10">
+                        Pilih user untuk memulai percakapan.
+                    </div>
+
+                </div>
+
+
+                <div class="border-t p-3">
+
+                    <div class="flex gap-2">
+
+                        <input
+                            id="chatInput"
+                            type="text"
+                            placeholder="Tulis pesan..."
+                            onkeydown="if(event.key==='Enter') sendChatMessage()"
+                            class="min-w-0 flex-1 border rounded-xl px-4 py-3">
+
+                        <button
+                            onclick="sendChatMessage()"
+                            class="bg-blue-600 text-white px-4 rounded-xl font-bold">
+
+                            ➤
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =================================================
+             REPORT TAB
+        ================================================== -->
+
+        <div id="reportTab" class="hidden">
+
+            <div class="card p-4 mb-4">
+
+                <h2 class="text-xl font-bold mb-4">
+                    📊 Statistik Kategori
+                </h2>
+
+                <div id="categoryStats"></div>
+
+            </div>
+
+
+            <div class="card p-4">
+
+                <div class="flex justify-between items-center gap-2 mb-4">
+
+                    <h2 class="text-xl font-bold">
+                        📋 Laporan
+                    </h2>
+
+                    <button
+                        onclick="exportCSV()"
+                        class="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-bold">
+
+                        CSV
+
+                    </button>
+
+                </div>
+
+                <div class="overflow-x-auto">
+
+                    <table class="w-full text-sm">
+
+                        <thead>
+
+                        <tr class="border-b text-left">
+
+                            <th class="p-3">Nama</th>
+                            <th class="p-3">Misi</th>
+                            <th class="p-3">Kategori</th>
+                            <th class="p-3">Status</th>
+                            <th class="p-3">Durasi</th>
+                            <th class="p-3">Selesai</th>
+
+                        </tr>
+
+                        </thead>
+
+                        <tbody id="reportTable"></tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     CREATE MISSION MODAL
+===================================================== -->
+
+<div
+    id="missionModal"
+    class="fixed inset-0 modal-bg hidden items-center justify-center p-3 z-50">
+
+    <div class="bg-white rounded-2xl w-full max-w-lg p-5 max-h-[95vh] overflow-y-auto">
+
+        <div class="flex justify-between items-center mb-5">
+
+            <h2 class="text-xl font-bold">
+                🎯 Buat Misi Baru
+            </h2>
+
+            <button
+                onclick="closeMissionModal()"
+                class="text-gray-500 text-3xl leading-none">
+                ×
+            </button>
+
+        </div>
+
+
+        <div class="space-y-4">
+
+            <div>
+
+                <label class="block text-sm font-bold mb-1">
+                    Nama Orang
+                </label>
+
+                <input
+                    id="personName"
+                    type="text"
+                    placeholder="Contoh: Andi"
+                    class="w-full border rounded-xl px-4 py-3">
+
+            </div>
+
+
+            <div>
+
+                <label class="block text-sm font-bold mb-1">
+                    Email Penerima Misi
+                </label>
+
+                <input
+                    id="assignedEmail"
+                    type="email"
+                    placeholder="Kosongkan jika untuk diri sendiri"
+                    class="w-full border rounded-xl px-4 py-3">
+
+                <div class="text-xs text-gray-500 mt-1">
+                    User harus sudah memiliki akun Mission Manager.
+                </div>
+
+            </div>
+
+
+            <div>
+
+                <label class="block text-sm font-bold mb-1">
+                    Nama Misi
+                </label>
+
+                <input
+                    id="missionTitle"
+                    type="text"
+                    placeholder="Contoh: Antar barang ke pelanggan"
+                    class="w-full border rounded-xl px-4 py-3">
+
+            </div>
+
+
+            <div>
+
+                <label class="block text-sm font-bold mb-1">
+                    Kategori
+                </label>
+
+                <select
+                    id="missionCategory"
+                    class="w-full border rounded-xl px-4 py-3">
+
+                    <option>Penjualan</option>
+                    <option>Pengiriman</option>
+                    <option>Produksi</option>
+                    <option>Keuangan</option>
+                    <option>Pembelian</option>
+                    <option>Pemasaran</option>
+                    <option>Operasional</option>
+                    <option>Lainnya</option>
+
+                </select>
+
+            </div>
+
+
+            <div>
+
+                <label class="block text-sm font-bold mb-1">
+                    Batas Waktu
+                </label>
+
+                <div class="grid grid-cols-2 gap-2">
+
+                    <input
+                        id="duration"
+                        type="number"
+                        min="1"
+                        value="30"
+                        class="border rounded-xl px-4 py-3">
+
+                    <select
+                        id="durationUnit"
+                        class="border rounded-xl px-4 py-3">
+
+                        <option value="minute">
+                            Menit
+                        </option>
+
+                        <option value="hour">
+                            Jam
+                        </option>
+
+                    </select>
+
+                </div>
+
+            </div>
+
+
+            <div>
+
+                <label class="block text-sm font-bold mb-1">
+                    Catatan
+                </label>
+
+                <textarea
+                    id="missionNote"
+                    rows="3"
+                    placeholder="Catatan atau target misi..."
+                    class="w-full border rounded-xl px-4 py-3"></textarea>
+
+            </div>
+
+
+            <button
+                onclick="createMission()"
+                class="mobile-btn w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold">
+
+                🚀 Mulai Misi
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script type="module">
+
+/* =====================================================
+   FIREBASE IMPORT
+===================================================== */
+
+import {
+    initializeApp
+} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+
+import {
+    getFirestore,
+    collection,
+    addDoc,
+    setDoc,
+    doc,
+    updateDoc,
+    query,
+    where,
+    getDocs,
+    onSnapshot,
+    limit
+} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+
+import {
+    getAuth,
+    setPersistence,
+    browserLocalPersistence,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    signOut,
+    onAuthStateChanged,
+    updateProfile
+} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
+
+
+/* =====================================================
+   FIREBASE CONFIG
+===================================================== */
+
+const firebaseConfig = {
+
+    apiKey: "AIzaSyAk9OTRCTchIPgxIf-QRmfi2BpxldqV9ac",
+
+    authDomain: "misi-db1b5.firebaseapp.com",
+
+    projectId: "misi-db1b5",
+
+    storageBucket: "misi-db1b5.firebasestorage.app",
+
+    messagingSenderId: "545608836011",
+
+    appId: "1:545608836011:web:e5e05a2034d8484305a8ee"
+
+};
+
+
+const app = initializeApp(firebaseConfig);
+
+const db = getFirestore(app);
+
+const auth = getAuth(app);
+
+
+/* =====================================================
+   GLOBAL
+===================================================== */
+
+let currentUser = null;
+
+let missions = [];
+
+let authMode = "login";
+
+let missionUnsubscribers = [];
+
+let chatUnsubscribe = null;
+
+let selectedChatUser = null;
+
+let timerInterval = null;
+
+
+/* =====================================================
+   FIREBASE LOGIN PERSISTENCE
+   Agar tidak login berulang kali
+===================================================== */
+
+try {
+
+    await setPersistence(
+        auth,
+        browserLocalPersistence
+    );
+
+} catch (error) {
+
+    console.error(
+        "Persistence error:",
+        error
+    );
+
+}
+
+
+/* =====================================================
+   AUTH MODE
+===================================================== */
+
+window.setAuthMode = function(mode) {
+
+    authMode = mode;
+
+    const loginBtn =
+        document.getElementById("loginModeBtn");
+
+    const registerBtn =
+        document.getElementById("registerModeBtn");
+
+    const nameBox =
+        document.getElementById("nameBox");
+
+    const authButton =
+        document.getElementById("authButton");
+
+
+    if (mode === "login") {
+
+        loginBtn.className =
+            "flex-1 py-3 rounded-lg font-bold bg-white shadow";
+
+        registerBtn.className =
+            "flex-1 py-3 rounded-lg font-bold text-gray-500";
+
+        nameBox.classList.add("hidden");
+
+        authButton.textContent =
+            "🔐 Login";
+
+        document.getElementById("authPassword")
+            .setAttribute(
+                "autocomplete",
+                "current-password"
+            );
+
+    } else {
+
+        registerBtn.className =
+            "flex-1 py-3 rounded-lg font-bold bg-white shadow";
+
+        loginBtn.className =
+            "flex-1 py-3 rounded-lg font-bold text-gray-500";
+
+        nameBox.classList.remove("hidden");
+
+        authButton.textContent =
+            "🚀 Buat Akun";
+
+        document.getElementById("authPassword")
+            .setAttribute(
+                "autocomplete",
+                "new-password"
+            );
+
+    }
+
+};
+
+
+/* =====================================================
+   AUTH SUBMIT
+===================================================== */
+
+window.submitAuth = async function() {
+
+    const name =
+        document.getElementById("authName")
+        .value.trim();
+
+    const email =
+        document.getElementById("authEmail")
+        .value.trim();
+
+    const password =
+        document.getElementById("authPassword")
+        .value;
+
+    const message =
+        document.getElementById("authMessage");
+
+
+    message.textContent = "";
+
+
+    if (!email) {
+
+        message.textContent =
+            "Email harus diisi.";
+
+        return;
+
+    }
+
+
+    if (!password || password.length < 6) {
+
+        message.textContent =
+            "Password minimal 6 karakter.";
+
+        return;
+
+    }
+
+
+    if (
+        authMode === "register" &&
+        !name
+    ) {
+
+        message.textContent =
+            "Nama harus diisi.";
+
+        return;
+
+    }
+
+
+    const button =
+        document.getElementById("authButton");
+
+
+    button.disabled = true;
+
+    button.textContent =
+        "⏳ Memproses...";
+
+
+    try {
+
+        if (authMode === "register") {
+
+            const result =
+                await createUserWithEmailAndPassword(
+                    auth,
+                    email,
+                    password
+                );
+
+
+            await updateProfile(
+                result.user,
+                {
+                    displayName: name
+                }
+            );
+
+
+            await saveUserProfile(
+                result.user,
+                name
+            );
+
+
+            showToast(
+                "Akun berhasil dibuat 🚀"
+            );
+
+        } else {
+
+            await signInWithEmailAndPassword(
+                auth,
+                email,
+                password
+            );
+
+        }
+
+    } catch (error) {
+
+        console.error(error);
+
+        message.textContent =
+            firebaseErrorMessage(error);
+
+    } finally {
+
+        button.disabled = false;
+
+        button.textContent =
+            authMode === "login"
+                ? "🔐 Login"
+                : "🚀 Buat Akun";
+
+    }
+
+};
+
+
+/* =====================================================
+   SAVE USER PROFILE
+===================================================== */
+
+async function saveUserProfile(user, name = "") {
+
+    const displayName =
+        name ||
+        user.displayName ||
+        user.email.split("@")[0];
+
+
+    await setDoc(
+        doc(db, "users", user.uid),
+        {
+
+            uid: user.uid,
+
+            email: user.email,
+
+            emailLower:
+                user.email.toLowerCase(),
+
+            name: displayName,
+
+            updatedAt: Date.now(),
+
+            createdAt: Date.now()
+
+        },
+        {
+            merge: true
+        }
+    );
+
+}
+
+
+/* =====================================================
+   AUTH STATE
+===================================================== */
+
+onAuthStateChanged(
+    auth,
+    async user => {
+
+        if (user) {
+
+            currentUser = user;
+
+            await saveUserProfile(user);
+
+            showApplication();
+
+            listenMissions();
+
+            startTimer();
+
+        } else {
+
+            currentUser = null;
+
+            stopMissionListeners();
+
+            if (chatUnsubscribe) {
+
+                chatUnsubscribe();
+
+                chatUnsubscribe = null;
+
+            }
+
+            stopTimer();
+
+            showLogin();
+
+        }
+
+    }
+);
+
+
+/* =====================================================
+   SHOW LOGIN
+===================================================== */
+
+function showLogin() {
+
+    document
+        .getElementById("authScreen")
+        .classList.remove("hidden");
+
+    document
+        .getElementById("appScreen")
+        .classList.add("hidden");
+
+}
+
+
+/* =====================================================
+   SHOW APP
+===================================================== */
+
+function showApplication() {
+
+    document
+        .getElementById("authScreen")
+        .classList.add("hidden");
+
+    document
+        .getElementById("appScreen")
+        .classList.remove("hidden");
+
+
+    document
+        .getElementById("currentUserInfo")
+        .textContent =
+            `${currentUser.displayName || currentUser.email} • ${currentUser.email}`;
+
+}
+
+
+/* =====================================================
+   LOGOUT
+===================================================== */
+
+window.logoutUser = async function() {
+
+    if (
+        !confirm(
+            "Yakin ingin keluar?"
+        )
+    ) return;
+
+
+    try {
+
+        await signOut(auth);
+
+        showToast(
+            "Berhasil keluar."
+        );
+
+    } catch (error) {
+
+        alert(
+            "Gagal logout: " +
+            error.message
+        );
+
+    }
+
+};
+
+
+/* =====================================================
+   FIREBASE ERROR
+===================================================== */
+
+function firebaseErrorMessage(error) {
+
+    const code =
+        error.code || "";
+
+
+    const messages = {
+
+        "auth/invalid-email":
+            "Format email tidak valid.",
+
+        "auth/user-not-found":
+            "Email belum terdaftar.",
+
+        "auth/wrong-password":
+            "Password salah.",
+
+        "auth/invalid-credential":
+            "Email atau password salah.",
+
+        "auth/email-already-in-use":
+            "Email sudah digunakan.",
+
+        "auth/weak-password":
+            "Password terlalu lemah.",
+
+        "auth/too-many-requests":
+            "Terlalu banyak percobaan. Coba lagi nanti.",
+
+        "auth/operation-not-allowed":
+            "Login Email/Password belum diaktifkan di Firebase."
+
+    };
+
+
+    return (
+        messages[code] ||
+        error.message ||
+        "Terjadi kesalahan."
+    );
+
+}
+
+
+/* =====================================================
+   LISTEN MISSIONS
+===================================================== */
+
+function stopMissionListeners() {
+
+    missionUnsubscribers.forEach(
+        unsubscribe => unsubscribe()
+    );
+
+    missionUnsubscribers = [];
+
+}
+
+
+/* =====================================================
+   LOAD MISSIONS DARI 2 ARAH
+
+   1. Misi yang dibuat user
+   2. Misi yang ditujukan kepada user
+===================================================== */
+
+function listenMissions() {
+
+    stopMissionListeners();
+
+    if (!currentUser) return;
+
+
+    const missionMap = new Map();
+
+
+    function processSnapshot(snapshot) {
+
+        snapshot.forEach(docSnap => {
+
+            missionMap.set(
+                docSnap.id,
+                {
+                    id: docSnap.id,
+                    ...docSnap.data()
+                }
+            );
+
+        });
+
+
+        missions =
+            Array.from(missionMap.values())
+            .sort(
+                (a, b) =>
+                    (b.createdAt || 0) -
+                    (a.createdAt || 0)
+            );
+
+
+        updateStatistics();
+
+        renderMissions();
+
+        renderReports();
+
+    }
+
+
+    const createdQuery =
+        query(
+            collection(db, "missions"),
+            where(
+                "createdByUid",
+                "==",
+                currentUser.uid
+            )
+        );
+
+
+    const assignedQuery =
+        query(
+            collection(db, "missions"),
+            where(
+                "assignedToUid",
+                "==",
+                currentUser.uid
+            )
+        );
+
+
+    missionUnsubscribers.push(
+
+        onSnapshot(
+            createdQuery,
+            processSnapshot,
+            handleFirestoreError
+        )
+
+    );
+
+
+    missionUnsubscribers.push(
+
+        onSnapshot(
+            assignedQuery,
+            processSnapshot,
+            handleFirestoreError
+        )
+
+    );
+
+}
+
+
+/* =====================================================
+   CREATE MISSION
+===================================================== */
+
+window.createMission = async function() {
+
+    if (!currentUser) {
+
+        alert("Silakan login terlebih dahulu.");
+
+        return;
+
+    }
+
+
+    const person =
+        document
+            .getElementById("personName")
+            .value
+            .trim();
+
+    const assignedEmail =
+        document
+            .getElementById("assignedEmail")
+            .value
+            .trim()
+            .toLowerCase();
+
+    const title =
+        document
+            .getElementById("missionTitle")
+            .value
+            .trim();
+
+    const category =
+        document
+            .getElementById("missionCategory")
+            .value;
+
+    const duration =
+        Number(
+            document
+                .getElementById("duration")
+                .value
+        );
+
+    const unit =
+        document
+            .getElementById("durationUnit")
+            .value;
+
+    const note =
+        document
+            .getElementById("missionNote")
+            .value
+            .trim();
+
+
+    if (!person) {
+
+        alert(
+            "Nama orang harus diisi."
+        );
+
+        return;
+
+    }
+
+
+    if (!title) {
+
+        alert(
+            "Nama misi harus diisi."
+        );
+
+        return;
+
+    }
+
+
+    if (!duration || duration <= 0) {
+
+        alert(
+            "Batas waktu harus lebih dari 0."
+        );
+
+        return;
+
+    }
+
+
+    let assignedUser = null;
+
+
+    if (assignedEmail) {
+
+        if (
+            assignedEmail ===
+            currentUser.email.toLowerCase()
+        ) {
+
+            assignedUser = {
+
+                uid: currentUser.uid,
+
+                email: currentUser.email,
+
+                name:
+                    currentUser.displayName ||
+                    currentUser.email.split("@")[0]
+
+            };
+
+        } else {
+
+            try {
+
+                const userQuery =
+                    query(
+                        collection(db, "users"),
+                        where(
+                            "emailLower",
+                            "==",
+                            assignedEmail
+                        ),
+                        limit(1)
+                    );
+
+
+                const result =
+                    await getDocs(userQuery);
+
+
+                if (result.empty) {
+
+                    alert(
+                        "User dengan email tersebut belum terdaftar."
+                    );
+
+                    return;
+
+                }
+
+
+                const userData =
+                    result.docs[0].data();
+
+
+                assignedUser = {
+
+                    uid: userData.uid,
+
+                    email: userData.email,
+
+                    name:
+                        userData.name ||
+                        userData.email.split("@")[0]
+
+                };
+
+            } catch (error) {
+
+                console.error(error);
+
+                alert(
+                    "Tidak bisa mencari user.\n\n" +
+                    error.message
+                );
+
+                return;
+
+            }
+
+        }
+
+    } else {
+
+        assignedUser = {
+
+            uid: currentUser.uid,
+
+            email: currentUser.email,
+
+            name:
+                currentUser.displayName ||
+                currentUser.email.split("@")[0]
+
+        };
+
+    }
+
+
+    let durationMs =
+        duration * 60 * 1000;
+
+
+    if (unit === "hour") {
+
+        durationMs =
+            duration * 60 * 60 * 1000;
+
+    }
+
+
+    const now =
+        Date.now();
+
+    const deadline =
+        now + durationMs;
+
+
+    try {
+
+        await addDoc(
+            collection(db, "missions"),
+            {
+
+                person: person,
+
+                title: title,
+
+                category: category,
+
+                note: note,
+
+                durationMs: durationMs,
+
+                startedAt: now,
+
+                deadline: deadline,
+
+                completedAt: null,
+
+                actualDuration: null,
+
+                status: "active",
+
+                createdAt: now,
+
+                createdByUid:
+                    currentUser.uid,
+
+                createdByEmail:
+                    currentUser.email,
+
+                createdByName:
+                    currentUser.displayName ||
+                    currentUser.email.split("@")[0],
+
+                assignedToUid:
+                    assignedUser.uid,
+
+                assignedToEmail:
+                    assignedUser.email,
+
+                assignedToName:
+                    assignedUser.name
+
+            }
+        );
+
+
+        closeMissionModal();
+
+        clearMissionForm();
+
+
+        showToast(
+            `Misi ditujukan ke ${assignedUser.email} 🚀`
+        );
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert(
+            "Gagal membuat misi.\n\n" +
+            error.message
+        );
+
+    }
+
+};
+
+
+/* =====================================================
+   COMPLETE MISSION
+===================================================== */
+
+window.completeMission = async function(id) {
+
+    const mission =
+        missions.find(
+            m => m.id === id
+        );
+
+
+    if (!mission) return;
+
+
+    if (!currentUser) return;
+
+
+    const now =
+        Date.now();
+
+
+    const wasLate =
+        now > mission.deadline;
+
+
+    try {
+
+        await updateDoc(
+            doc(db, "missions", id),
+            {
+
+                status:
+                    wasLate
+                        ? "late"
+                        : "done",
+
+                completedAt:
+                    now,
+
+                actualDuration:
+                    now -
+                    mission.startedAt
+
+            }
+        );
+
+
+        showToast(
+            wasLate
+                ? "Misi selesai, tetapi terlambat ⚠️"
+                : "Misi selesai ✅"
+        );
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert(
+            "Gagal menyelesaikan misi.\n\n" +
+            error.message
+        );
+
+    }
+
+};
+
+
+/* =====================================================
+   EXPIRED MISSIONS
+===================================================== */
+
+async function checkExpiredMissions() {
+
+    if (!currentUser) return;
+
+
+    const now =
+        Date.now();
+
+
+    for (const mission of missions) {
+
+        if (
+            mission.status === "active" &&
+            now > mission.deadline
+        ) {
+
+            try {
+
+                await updateDoc(
+                    doc(
+                        db,
+                        "missions",
+                        mission.id
+                    ),
+                    {
+                        status: "late"
+                    }
+                );
+
+            } catch (error) {
+
+                console.error(error);
+
+            }
+
+        }
+
+    }
+
+}
+
+
+/* =====================================================
+   RENDER MISSIONS
+===================================================== */
+
+window.renderMissions = function() {
+
+    const search =
+        document
+            .getElementById("searchMission")
+            .value
+            .toLowerCase();
+
+    const category =
+        document
+            .getElementById("filterCategory")
+            .value;
+
+    const status =
+        document
+            .getElementById("filterStatus")
+            .value;
+
+
+    let data =
+        [...missions];
+
+
+    if (search) {
+
+        data =
+            data.filter(m =>
+
+                (m.person || "")
+                    .toLowerCase()
+                    .includes(search)
+
+                ||
+
+                (m.title || "")
+                    .toLowerCase()
+                    .includes(search)
+
+                ||
+
+                (m.assignedToEmail || "")
+                    .toLowerCase()
+                    .includes(search)
+
+                ||
+
+                (m.createdByEmail || "")
+                    .toLowerCase()
+                    .includes(search)
+
+            );
+
+    }
+
+
+    if (category) {
+
+        data =
+            data.filter(
+                m =>
+                    m.category === category
+            );
+
+    }
+
+
+    if (status) {
+
+        data =
+            data.filter(
+                m =>
+                    m.status === status
+            );
+
+    }
+
+
+    const container =
+        document.getElementById(
+            "missionList"
+        );
+
+
+    if (!data.length) {
+
+        container.innerHTML = `
+            <div class="card p-8 text-center text-gray-500">
+                Belum ada misi.
+            </div>
+        `;
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+        data
+            .map(renderMissionCard)
+            .join("");
+
+};
+
+
+/* =====================================================
+   MISSION CARD
+===================================================== */
+
+function renderMissionCard(m) {
+
+    const now =
+        Date.now();
+
+
+    const remaining =
+        Math.max(
+            0,
+            (m.deadline || now) -
+            now
+        );
+
+
+    const progress =
+        Math.min(
+            100,
+            Math.max(
+                0,
+                100 -
+                (
+                    remaining /
+                    (m.durationMs || 1)
+                ) *
+                100
+            )
+        );
+
+
+    let statusText =
+        "AKTIF";
+
+
+    let statusClass =
+        "bg-blue-100 text-blue-700";
+
+
+    if (m.status === "done") {
+
+        statusText =
+            "SELESAI";
+
+        statusClass =
+            "bg-green-100 text-green-700";
+
+    }
+
+
+    if (m.status === "late") {
+
+        statusText =
+            "TERLAMBAT";
+
+        statusClass =
+            "bg-red-100 text-red-700";
+
+    }
+
+
+    const isMine =
+        m.createdByUid ===
+        currentUser?.uid;
+
+
+    const assignedToMe =
+        m.assignedToUid ===
+        currentUser?.uid;
+
+
+    return `
+
+        <div class="card mission-card p-4 md:p-5">
+
+            <div class="flex justify-between items-start gap-3">
+
+                <div class="min-w-0 flex-1">
+
+                    <div class="flex flex-wrap items-center gap-2">
+
+                        <span
+                            class="text-xs font-bold px-2 py-1 rounded-full ${statusClass}">
+                            ${statusText}
+                        </span>
+
+                        <span
+                            class="text-xs bg-gray-100 px-2 py-1 rounded-full">
+                            ${escapeHTML(m.category || "Lainnya")}
+                        </span>
+
+                        ${
+                            assignedToMe
+                            ?
+                            `
+                            <span class="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-full font-bold">
+                                Untuk saya
+                            </span>
+                            `
+                            :
+                            `
+                            <span class="text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded-full font-bold">
+                                Saya yang membuat
+                            </span>
+                            `
+                        }
+
+                    </div>
+
+
+                    <h3 class="font-bold text-lg md:text-xl mt-3 break-words">
+                        ${escapeHTML(m.title || "")}
+                    </h3>
+
+
+                    <div class="text-gray-600 mt-1 text-sm">
+                        👤 ${escapeHTML(m.person || "")}
+                    </div>
+
+                </div>
+
+
+                ${
+                    m.status === "active"
+                    ?
+                    `
+                    <div class="text-right shrink-0">
+
+                        <div class="text-xs text-gray-400">
+                            Sisa
+                        </div>
+
+                        <div
+                            id="timer-${m.id}"
+                            class="timer text-lg md:text-xl">
+                            ${formatTime(remaining)}
+                        </div>
+
+                    </div>
+                    `
+                    :
+                    ""
+                }
+
+            </div>
+
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-4 text-xs">
+
+                <div class="bg-gray-50 rounded-xl p-3">
+
+                    <div class="text-gray-400">
+                        Dibuat oleh
+                    </div>
+
+                    <div class="font-bold mt-1 break-all">
+                        ${escapeHTML(
+                            m.createdByName ||
+                            m.createdByEmail ||
+                            "-"
+                        )}
+                    </div>
+
+                </div>
+
+
+                <div class="bg-gray-50 rounded-xl p-3">
+
+                    <div class="text-gray-400">
+                        Ditujukan kepada
+                    </div>
+
+                    <div class="font-bold mt-1 break-all">
+                        ${escapeHTML(
+                            m.assignedToName ||
+                            m.assignedToEmail ||
+                            "-"
+                        )}
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            ${
+                m.note
+                ?
+                `
+                <div class="mt-3 p-3 bg-gray-50 rounded-xl text-sm text-gray-600">
+                    📝 ${escapeHTML(m.note)}
+                </div>
+                `
+                :
+                ""
+            }
+
+
+            <div class="mt-4">
+
+                <div class="flex justify-between text-xs text-gray-500 mb-1">
+
+                    <span>
+                        Progress waktu
+                    </span>
+
+                    <span>
+                        ${Math.round(progress)}%
+                    </span>
+
+                </div>
+
+
+                <div class="progress">
+
+                    <div
+                        class="progress-bar ${
+                            m.status === "late"
+                                ? "bg-red-500"
+                                : m.status === "done"
+                                    ? "bg-green-500"
+                                    : "bg-blue-500"
+                        }"
+                        style="width:${progress}%">
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            ${
+                m.status === "active" ||
+                m.status === "late"
+                ?
+                `
+                <button
+                    onclick="completeMission('${m.id}')"
+                    class="mobile-btn w-full mt-4 ${
+                        m.status === "late"
+                            ? "bg-red-600 hover:bg-red-700"
+                            : "bg-green-600 hover:bg-green-700"
+                    } text-white py-3 rounded-xl font-bold">
+
+                    ${
+                        m.status === "late"
+                            ? "✓ Selesaikan Sekarang"
+                            : "✓ Selesaikan Misi"
+                    }
+
+                </button>
+                `
+                :
+                `
+                <div class="mt-4 p-3 bg-green-50 text-green-700 rounded-xl text-sm font-bold">
+
+                    ✅ Selesai:
+                    ${
+                        m.completedAt
+                            ? formatDate(m.completedAt)
+                            : "-"
+                    }
+
+                </div>
+                `
+            }
+
+        </div>
+
+    `;
+
+}
+
+
+/* =====================================================
+   TIMER
+===================================================== */
+
+function startTimer() {
+
+    stopTimer();
+
+    timerInterval =
+        setInterval(
+            updateTimers,
+            1000
+        );
+
+}
+
+
+function stopTimer() {
+
+    if (timerInterval) {
+
+        clearInterval(timerInterval);
+
+        timerInterval = null;
+
+    }
+
+}
+
+
+async function updateTimers() {
+
+    if (!currentUser) return;
+
+
+    const now =
+        Date.now();
+
+
+    let expiredFound =
+        false;
+
+
+    missions.forEach(m => {
+
+        if (
+            m.status !== "active"
+        ) return;
+
+
+        const element =
+            document.getElementById(
+                "timer-" + m.id
+            );
+
+
+        if (!element) return;
+
+
+        const remaining =
+            Math.max(
+                0,
+                m.deadline - now
+            );
+
+
+        element.textContent =
+            formatTime(remaining);
+
+
+        if (remaining <= 60000) {
+
+            element.classList.add(
+                "warning"
+            );
+
+        }
+
+
+        if (remaining === 0) {
+
+            expiredFound = true;
+
+        }
+
+    });
+
+
+    if (expiredFound) {
+
+        await checkExpiredMissions();
+
+    }
+
+}
+
+
+/* =====================================================
+   STATISTICS
+===================================================== */
+
+function updateStatistics() {
+
+    const total =
+        missions.length;
+
+
+    const active =
+        missions.filter(
+            m =>
+                m.status === "active"
+        ).length;
+
+
+    const done =
+        missions.filter(
+            m =>
+                m.status === "done"
+        ).length;
+
+
+    const late =
+        missions.filter(
+            m =>
+                m.status === "late"
+        ).length;
+
+
+    document
+        .getElementById("statTotal")
+        .textContent = total;
+
+
+    document
+        .getElementById("statActive")
+        .textContent = active;
+
+
+    document
+        .getElementById("statDone")
+        .textContent = done;
+
+
+    document
+        .getElementById("statLate")
+        .textContent = late;
+
+
+    renderCategoryStats();
+
+}
+
+
+/* =====================================================
+   CATEGORY STATS
+===================================================== */
+
+function renderCategoryStats() {
+
+    const categories = {};
+
+
+    missions.forEach(m => {
+
+        const cat =
+            m.category ||
+            "Lainnya";
+
+
+        if (!categories[cat]) {
+
+            categories[cat] = {
+
+                total: 0,
+
+                done: 0,
+
+                late: 0,
+
+                active: 0
+
+            };
+
+        }
+
+
+        categories[cat].total++;
+
+
+        if (
+            m.status === "done"
+        )
+            categories[cat].done++;
+
+
+        if (
+            m.status === "late"
+        )
+            categories[cat].late++;
+
+
+        if (
+            m.status === "active"
+        )
+            categories[cat].active++;
+
+    });
+
+
+    const container =
+        document.getElementById(
+            "categoryStats"
+        );
+
+
+    if (
+        !Object.keys(categories).length
+    ) {
+
+        container.innerHTML =
+            `<div class="text-gray-500">
+                Belum ada data.
+            </div>`;
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+        Object.entries(categories)
+        .map(
+            ([name, value]) => {
+
+                const percentage =
+                    value.total
+                    ?
+                    Math.round(
+                        value.done /
+                        value.total *
+                        100
+                    )
+                    :
+                    0;
+
+
+                return `
+
+                    <div class="border-b py-4 last:border-0">
+
+                        <div class="flex justify-between">
+
+                            <strong>
+                                ${escapeHTML(name)}
+                            </strong>
+
+                            <span class="font-bold">
+                                ${percentage}%
+                            </span>
+
+                        </div>
+
+
+                        <div class="progress mt-2">
+
+                            <div
+                                class="progress-bar bg-green-500"
+                                style="width:${percentage}%">
+                            </div>
+
+                        </div>
+
+
+                        <div class="flex flex-wrap gap-4 text-xs text-gray-500 mt-2">
+
+                            <span>
+                                Total: ${value.total}
+                            </span>
+
+                            <span>
+                                ✓ ${value.done}
+                            </span>
+
+                            <span>
+                                ⚠ ${value.late}
+                            </span>
+
+                            <span>
+                                ● ${value.active}
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                `;
+
+            }
+        )
+        .join("");
+
+}
+
+
+/* =====================================================
+   REPORT
+===================================================== */
+
+function renderReports() {
+
+    const table =
+        document.getElementById(
+            "reportTable"
+        );
+
+
+    const reports =
+        missions.filter(
+            m =>
+                m.status === "done" ||
+                m.status === "late"
+        );
+
+
+    if (!reports.length) {
+
+        table.innerHTML = `
+            <tr>
+                <td
+                    colspan="6"
+                    class="p-6 text-center text-gray-500">
+                    Belum ada misi yang selesai.
+                </td>
+            </tr>
+        `;
+
+        return;
+
+    }
+
+
+    table.innerHTML =
+        reports
+        .map(m => {
+
+            const actual =
+                m.actualDuration ||
+                (
+                    m.completedAt
+                    ?
+                    m.completedAt -
+                    m.startedAt
+                    :
+                    0
+                );
+
+
+            const status =
+                m.status === "done"
+                ?
+                `
+                <span class="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold">
+                    SELESAI
+                </span>
+                `
+                :
+                `
+                <span class="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold">
+                    TERLAMBAT
+                </span>
+                `;
+
+
+            return `
+
+                <tr class="border-b">
+
+                    <td class="p-3 font-bold">
+                        ${escapeHTML(m.person || "")}
+                    </td>
+
+                    <td class="p-3">
+                        ${escapeHTML(m.title || "")}
+                    </td>
+
+                    <td class="p-3">
+                        ${escapeHTML(m.category || "")}
+                    </td>
+
+                    <td class="p-3">
+                        ${status}
+                    </td>
+
+                    <td class="p-3 whitespace-nowrap">
+                        ${formatDuration(actual)}
+                    </td>
+
+                    <td class="p-3 whitespace-nowrap">
+                        ${
+                            m.completedAt
+                            ?
+                            formatDate(
+                                m.completedAt
+                            )
+                            :
+                            "-"
+                        }
+                    </td>
+
+                </tr>
+
+            `;
+
+        })
+        .join("");
+
+}
+
+
+/* =====================================================
+   TABS
+===================================================== */
+
+window.showTab = function(tab) {
+
+    const missionTab =
+        document.getElementById(
+            "missionTab"
+        );
+
+    const chatTab =
+        document.getElementById(
+            "chatTab"
+        );
+
+    const reportTab =
+        document.getElementById(
+            "reportTab"
+        );
+
+
+    const tabMission =
+        document.getElementById(
+            "tabMission"
+        );
+
+    const tabChat =
+        document.getElementById(
+            "tabChat"
+        );
+
+    const tabReport =
+        document.getElementById(
+            "tabReport"
+        );
+
+
+    missionTab.classList.add("hidden");
+
+    chatTab.classList.add("hidden");
+
+    reportTab.classList.add("hidden");
+
+
+    tabMission.classList.remove(
+        "tab-active"
+    );
+
+    tabChat.classList.remove(
+        "tab-active"
+    );
+
+    tabReport.classList.remove(
+        "tab-active"
+    );
+
+
+    if (tab === "mission") {
+
+        missionTab.classList.remove(
+            "hidden"
+        );
+
+        tabMission.classList.add(
+            "tab-active"
+        );
+
+    }
+
+
+    if (tab === "chat") {
+
+        chatTab.classList.remove(
+            "hidden"
+        );
+
+        tabChat.classList.add(
+            "tab-active"
+        );
+
+    }
+
+
+    if (tab === "report") {
+
+        reportTab.classList.remove(
+            "hidden"
+        );
+
+        tabReport.classList.add(
+            "tab-active"
+        );
+
+        renderReports();
+
+    }
+
+};
+
+
+/* =====================================================
+   MISSION MODAL
+===================================================== */
+
+window.openMissionModal = function() {
+
+    const modal =
+        document.getElementById(
+            "missionModal"
+        );
+
+
+    modal.classList.remove(
+        "hidden"
+    );
+
+    modal.classList.add(
+        "flex"
+    );
+
+
+    setTimeout(
+        () => {
+
+            document
+                .getElementById(
+                    "missionTitle"
+                )
+                .focus();
+
+        },
+        100
+    );
+
+};
+
+
+window.closeMissionModal = function() {
+
+    const modal =
+        document.getElementById(
+            "missionModal"
+        );
+
+
+    modal.classList.add(
+        "hidden"
+    );
+
+    modal.classList.remove(
+        "flex"
+    );
+
+};
+
+
+function clearMissionForm() {
+
+    document.getElementById(
+        "personName"
+    ).value = "";
+
+
+    document.getElementById(
+        "assignedEmail"
+    ).value = "";
+
+
+    document.getElementById(
+        "missionTitle"
+    ).value = "";
+
+
+    document.getElementById(
+        "duration"
+    ).value = 30;
+
+
+    document.getElementById(
+        "missionNote"
+    ).value = "";
+
+}
+
+
+/* =====================================================
+   CHAT
+===================================================== */
+
+window.openChatByEmail = async function() {
+
+    if (!currentUser) return;
+
+
+    const email =
+        document
+            .getElementById("chatEmail")
+            .value
+            .trim()
+            .toLowerCase();
+
+
+    if (!email) {
+
+        alert(
+            "Masukkan email user."
+        );
+
+        return;
+
+    }
+
+
+    if (
+        email ===
+        currentUser.email.toLowerCase()
+    ) {
+
+        alert(
+            "Tidak bisa chat dengan akun sendiri."
+        );
+
+        return;
+
+    }
+
+
+    try {
+
+        const q =
+            query(
+                collection(db, "users"),
+                where(
+                    "emailLower",
+                    "==",
+                    email
+                ),
+                limit(1)
+            );
+
+
+        const snapshot =
+            await getDocs(q);
+
+
+        if (snapshot.empty) {
+
+            alert(
+                "User tidak ditemukan."
+            );
+
+            return;
+
+        }
+
+
+        const data =
+            snapshot.docs[0].data();
+
+
+        selectedChatUser = {
+
+            uid: data.uid,
+
+            email: data.email,
+
+            name:
+                data.name ||
+                data.email.split("@")[0]
+
+        };
+
+
+        document
+            .getElementById(
+                "chatTargetInfo"
+            )
+            .textContent =
+                `💬 Chat dengan ${selectedChatUser.name} (${selectedChatUser.email})`;
+
+
+        listenChat();
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert(
+            "Gagal mencari user.\n\n" +
+            error.message
+        );
+
+    }
+
+};
+
+
+/* =====================================================
+   CHAT LISTENER
+===================================================== */
+
+function getConversationId(uid1, uid2) {
+
+    return [uid1, uid2]
+        .sort()
+        .join("_");
+
+}
+
+
+function listenChat() {
+
+    if (chatUnsubscribe) {
+
+        chatUnsubscribe();
+
+        chatUnsubscribe = null;
+
+    }
+
+
+    if (
+        !currentUser ||
+        !selectedChatUser
+    ) return;
+
+
+    const conversationId =
+        getConversationId(
+            currentUser.uid,
+            selectedChatUser.uid
+        );
+
+
+    const q =
+        query(
+            collection(db, "messages"),
+            where(
+                "members",
+                "array-contains",
+                currentUser.uid
+            )
+        );
+
+
+    chatUnsubscribe =
+        onSnapshot(
+            q,
+            snapshot => {
+
+                const messages = [];
+
+
+                snapshot.forEach(
+                    docSnap => {
+
+                        const data =
+                            docSnap.data();
+
+
+                        if (
+                            data.conversationId ===
+                            conversationId
+                        ) {
+
+                            messages.push({
+
+                                id:
+                                    docSnap.id,
+
+                                ...data
+
+                            });
+
+                        }
+
+                    }
+                );
+
+
+                messages.sort(
+                    (a, b) =>
+                        (a.createdAt || 0) -
+                        (b.createdAt || 0)
+                );
+
+
+                renderChatMessages(
+                    messages
+                );
+
+            },
+            error => {
+
+                console.error(error);
+
+                document
+                    .getElementById(
+                        "chatMessages"
+                    )
+                    .innerHTML = `
+                    <div class="text-center text-red-500 py-10">
+                        Gagal membaca chat.<br>
+                        Periksa Firestore Rules.
+                    </div>
+                `;
+
+            }
+        );
+
+}
+
+
+/* =====================================================
+   RENDER CHAT
+===================================================== */
+
+function renderChatMessages(messages) {
+
+    const container =
+        document.getElementById(
+            "chatMessages"
+        );
+
+
+    if (!messages.length) {
+
+        container.innerHTML = `
+            <div class="text-center text-gray-400 py-10">
+                Belum ada pesan.<br>
+                Mulai percakapan sekarang.
+            </div>
+        `;
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+        messages
+        .map(m => {
+
+            const mine =
+                m.senderUid ===
+                currentUser.uid;
+
+
+            return `
+
+                <div class="message ${
+                    mine
+                        ? "message-me"
+                        : "message-other"
+                } px-4 py-3">
+
+                    <div class="text-sm">
+                        ${escapeHTML(m.text || "")}
+                    </div>
+
+                    <div class="${
+                        mine
+                            ? "text-blue-100"
+                            : "text-gray-400"
+                    } text-[10px] mt-1 text-right">
+
+                        ${formatDate(
+                            m.createdAt
+                        )}
+
+                    </div>
+
+                </div>
+
+            `;
+
+        })
+        .join("");
+
+
+    container.scrollTop =
+        container.scrollHeight;
+
+}
+
+
+/* =====================================================
+   SEND CHAT
+===================================================== */
+
+window.sendChatMessage = async function() {
+
+    if (
+        !currentUser ||
+        !selectedChatUser
+    ) {
+
+        alert(
+            "Pilih user terlebih dahulu."
+        );
+
+        return;
+
+    }
+
+
+    const input =
+        document.getElementById(
+            "chatInput"
+        );
+
+
+    const text =
+        input.value.trim();
+
+
+    if (!text) return;
+
+
+    const conversationId =
+        getConversationId(
+            currentUser.uid,
+            selectedChatUser.uid
+        );
+
+
+    try {
+
+        await addDoc(
+            collection(db, "messages"),
+            {
+
+                conversationId:
+                    conversationId,
+
+                members: [
+                    currentUser.uid,
+                    selectedChatUser.uid
+                ],
+
+                senderUid:
+                    currentUser.uid,
+
+                senderEmail:
+                    currentUser.email,
+
+                receiverUid:
+                    selectedChatUser.uid,
+
+                receiverEmail:
+                    selectedChatUser.email,
+
+                text: text,
+
+                createdAt:
+                    Date.now()
+
+            }
+        );
+
+
+        input.value = "";
+
+        input.focus();
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert(
+            "Pesan gagal dikirim.\n\n" +
+            error.message
+        );
+
+    }
+
+};
+
+
+/* =====================================================
+   FORMAT TIME
+===================================================== */
+
+function formatTime(ms) {
+
+    let totalSeconds =
+        Math.floor(
+            ms / 1000
+        );
+
+
+    const hours =
+        Math.floor(
+            totalSeconds / 3600
+        );
+
+
+    totalSeconds %= 3600;
+
+
+    const minutes =
+        Math.floor(
+            totalSeconds / 60
+        );
+
+
+    const seconds =
+        totalSeconds % 60;
+
+
+    if (hours > 0) {
+
+        return (
+            String(hours)
+                .padStart(2, "0")
+            +
+            ":"
+            +
+            String(minutes)
+                .padStart(2, "0")
+            +
+            ":"
+            +
+            String(seconds)
+                .padStart(2, "0")
+        );
+
+    }
+
+
+    return (
+        String(minutes)
+            .padStart(2, "0")
+        +
+        ":"
+        +
+        String(seconds)
+            .padStart(2, "0")
+    );
+
+}
+
+
+/* =====================================================
+   FORMAT DURATION
+===================================================== */
+
+function formatDuration(ms) {
+
+    if (!ms) return "-";
+
+
+    const seconds =
+        Math.floor(
+            ms / 1000
+        );
+
+
+    const minutes =
+        Math.floor(
+            seconds / 60
+        );
+
+
+    const hours =
+        Math.floor(
+            minutes / 60
+        );
+
+
+    if (hours > 0) {
+
+        return (
+            hours +
+            " jam " +
+            (minutes % 60) +
+            " menit"
+        );
+
+    }
+
+
+    if (minutes > 0) {
+
+        return (
+            minutes +
+            " menit"
+        );
+
+    }
+
+
+    return (
+        seconds +
+        " detik"
+    );
+
+}
+
+
+/* =====================================================
+   FORMAT DATE
+===================================================== */
+
+function formatDate(timestamp) {
+
+    if (!timestamp) return "-";
+
+
+    return new Date(
+        timestamp
+    ).toLocaleString(
+        "id-ID",
+        {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+        }
+    );
+
+}
+
+
+/* =====================================================
+   CSV EXPORT
+===================================================== */
+
+window.exportCSV = function() {
+
+    const reports =
+        missions.filter(
+            m =>
+                m.status === "done" ||
+                m.status === "late"
+        );
+
+
+    if (!reports.length) {
+
+        alert(
+            "Belum ada laporan untuk diekspor."
+        );
+
+        return;
+
+    }
+
+
+    let csv =
+        "Nama,Misi,Kategori,Status,Durasi,Selesai\n";
+
+
+    reports.forEach(m => {
+
+        const actual =
+            m.actualDuration ||
+            (
+                m.completedAt
+                ?
+                m.completedAt -
+                m.startedAt
+                :
+                0
+            );
+
+
+        csv += [
+
+            csvSafe(m.person),
+
+            csvSafe(m.title),
+
+            csvSafe(m.category),
+
+            m.status === "done"
+                ? "SELESAI"
+                : "TERLAMBAT",
+
+            csvSafe(
+                formatDuration(actual)
+            ),
+
+            csvSafe(
+                m.completedAt
+                ?
+                formatDate(
+                    m.completedAt
+                )
+                :
+                ""
+            )
+
+        ].join(",") + "\n";
+
+    });
+
+
+    const blob =
+        new Blob(
+            [csv],
+            {
+                type:
+                    "text/csv;charset=utf-8;"
+            }
+        );
+
+
+    const url =
+        URL.createObjectURL(
+            blob
+        );
+
+
+    const a =
+        document.createElement(
+            "a"
+        );
+
+
+    a.href = url;
+
+    a.download =
+        "laporan-misi.csv";
+
+    a.click();
+
+
+    URL.revokeObjectURL(
+        url
+    );
+
+};
+
+
+function csvSafe(value) {
+
+    return `"${String(
+        value || ""
+    ).replace(
+        /"/g,
+        '""'
+    )}"`;
+
+}
+
+
+/* =====================================================
+   HTML SECURITY
+===================================================== */
+
+function escapeHTML(value) {
+
+    return String(
+        value || ""
+    )
+    .replace(
+        /&/g,
+        "&amp;"
+    )
+    .replace(
+        /</g,
+        "&lt;"
+    )
+    .replace(
+        />/g,
+        "&gt;"
+    )
+    .replace(
+        /"/g,
+        "&quot;"
+    )
+    .replace(
+        /'/g,
+        "&#039;"
+    );
+
+}
+
+
+/* =====================================================
+   FIRESTORE ERROR
+===================================================== */
+
+function handleFirestoreError(error) {
+
+    console.error(error);
+
+    const list =
+        document.getElementById(
+            "missionList"
+        );
+
+
+    if (list) {
+
+        list.innerHTML = `
+            <div class="card p-6 text-center text-red-500">
+                Gagal membaca data Firebase.
+                <br>
+                <span class="text-xs">
+                    ${escapeHTML(error.message)}
+                </span>
+            </div>
+        `;
+
+    }
+
+}
+
+
+/* =====================================================
+   TOAST
+===================================================== */
+
+function showToast(message) {
+
+    const toast =
+        document.createElement(
+            "div"
+        );
+
+
+    toast.className =
+        "fixed bottom-20 md:bottom-5 " +
+        "left-1/2 -translate-x-1/2 " +
+        "bg-gray-900 text-white " +
+        "px-5 py-3 rounded-xl " +
+        "shadow-lg z-[100] text-sm " +
+        "font-bold max-w-[90%] text-center";
+
+
+    toast.textContent =
+        message;
+
+
+    document.body.appendChild(
+        toast
+    );
+
+
+    setTimeout(
+        () => {
+
+            toast.remove();
+
+        },
+        2500
+    );
+
+}
+
+
+/* =====================================================
+   MODAL CLOSE WHEN CLICK OUTSIDE
+===================================================== */
+
+document
+    .getElementById("missionModal")
+    .addEventListener(
+        "click",
+        event => {
+
+            if (
+                event.target.id ===
+                "missionModal"
+            ) {
+
+                closeMissionModal();
+
+            }
+
+        }
+    );
+
+
+/* =====================================================
+   ENTER KEY LOGIN
+===================================================== */
+
+document
+    .getElementById("authPassword")
+    .addEventListener(
+        "keydown",
+        event => {
+
+            if (
+                event.key === "Enter"
+            ) {
+
+                submitAuth();
+
+            }
+
+        }
+    );
+
+
+/* =====================================================
+   INITIAL
+===================================================== */
+
+window.addEventListener(
+    "load",
+    () => {
+
+        setAuthMode("login");
+
+    }
+);
+
+</script>
+
+</body>
+</html>
